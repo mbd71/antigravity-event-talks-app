@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Controls & Search
         refreshBtn: document.getElementById('refresh-btn'),
+        exportCsvBtn: document.getElementById('export-csv-btn'),
         retryBtn: document.getElementById('retry-btn'),
         searchInput: document.getElementById('search-input'),
         clearSearchBtn: document.getElementById('clear-search-btn'),
@@ -185,10 +186,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================================================
     // RENDER TIMELINE CARDS
     // ==========================================================================
-    function renderTimeline() {
-        // Filter & Search the notes
-        const filtered = allNotes.filter(note => {
-            const matchesFilter = currentFilter === 'all' || note.type === currentFilter;
+    function getFilteredNotes() {
+        return allNotes.filter(note => {
+            let matchesFilter = false;
+            if (currentFilter === 'all') {
+                matchesFilter = true;
+            } else if (currentFilter === 'other-only') {
+                matchesFilter = note.type !== 'Feature' && note.type !== 'Change';
+            } else {
+                matchesFilter = note.type === currentFilter;
+            }
             
             const searchLower = searchQuery.toLowerCase();
             const matchesSearch = !searchQuery || 
@@ -198,6 +205,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 
             return matchesFilter && matchesSearch;
         });
+    }
+
+    function renderTimeline() {
+        const filtered = getFilteredNotes();
 
         // Toggle visibility based on filtered length
         if (filtered.length === 0) {
@@ -246,6 +257,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="card-header">
                         <span class="card-badge badge-${note.type}">${note.type}</span>
                         <div class="card-actions">
+                            <button class="card-action-btn copy-btn" data-id="${note.id}" title="Copy to clipboard">
+                                <svg class="btn-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                </svg>
+                                Copy
+                            </button>
                             <a href="${note.link}" target="_blank" class="card-action-btn" title="View official doc">
                                 <svg class="btn-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
@@ -276,6 +294,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     card.classList.add('selected-highlight');
                 });
                 
+                // Add click listener to Copy button
+                const copyBtn = card.querySelector('.copy-btn');
+                copyBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    try {
+                        await navigator.clipboard.writeText(note.text);
+                        showToast('Card text copied to clipboard!', 'success');
+                    } catch (err) {
+                        console.error('Failed to copy card text:', err);
+                        showToast('Failed to copy text.', 'error');
+                    }
+                });
+
                 // Add click listener to Tweet button
                 const tweetBtn = card.querySelector('.tweet-btn');
                 tweetBtn.addEventListener('click', () => {
@@ -365,92 +396,72 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentFilter = 'Change';
                 document.querySelector('.filter-pill[data-filter="Change"]').classList.add('active');
             } else {
-                // If it is 'other', it filters general, announcements, fixes etc.
-                // We'll show all, but we can also filter for items that are NOT Feature/Change
-                currentFilter = 'all'; // Fallback
+                currentFilter = 'other-only';
                 showToast('Filtering for other releases (Announcements, Fixes, Deprecations)...', 'info');
-                // Select "all" for header pill but we'll client side filter notes that aren't Feature/Change
                 document.querySelector('.filter-pill[data-filter="all"]').classList.add('active');
-                
-                // Let's implement custom filtering logic for "Others"
-                renderTimelineOthersOnly();
-                return;
             }
             
             renderTimeline();
         });
     });
 
-    function renderTimelineOthersOnly() {
-        currentFilter = 'other-only';
-        // Re-run render with custom filter logic
-        const filtered = allNotes.filter(note => {
-            const isOther = note.type !== 'Feature' && note.type !== 'Change';
-            const searchLower = searchQuery.toLowerCase();
-            const matchesSearch = !searchQuery || 
-                note.type.toLowerCase().includes(searchLower) ||
-                note.date.toLowerCase().includes(searchLower) ||
-                note.text.toLowerCase().includes(searchLower);
-            return isOther && matchesSearch;
-        });
-
+    function exportCurrentNotesToCSV() {
+        const filtered = getFilteredNotes();
         if (filtered.length === 0) {
-            elements.notesTimeline.style.display = 'none';
-            elements.emptyState.style.display = 'flex';
+            showToast('No notes available to export.', 'warning');
             return;
         }
-
-        elements.emptyState.style.display = 'none';
-        elements.notesTimeline.style.display = 'flex';
-        elements.notesTimeline.innerHTML = '';
-
-        const groups = {};
+        
+        // CSV Headers
+        const headers = ['Date', 'Type', 'Description', 'Link'];
+        
+        // Helper to escape double quotes and wrap in quotes if needed
+        const escapeCSVValue = (val) => {
+            if (val === null || val === undefined) return '';
+            let formatted = val.toString().trim();
+            // Replace newlines and multiple spaces to keep it single line per cell
+            formatted = formatted.replace(/\s+/g, ' ');
+            // Escape double quotes
+            if (formatted.includes('"') || formatted.includes(',') || formatted.includes('\n') || formatted.includes('\r')) {
+                formatted = `"${formatted.replace(/"/g, '""')}"`;
+            }
+            return formatted;
+        };
+        
+        // Generate rows
+        const csvRows = [];
+        csvRows.push(headers.join(','));
+        
         filtered.forEach(note => {
-            if (!groups[note.date]) groups[note.date] = [];
-            groups[note.date].push(note);
+            const row = [
+                escapeCSVValue(note.date),
+                escapeCSVValue(note.type),
+                escapeCSVValue(note.text),
+                escapeCSVValue(note.link)
+            ];
+            csvRows.push(row.join(','));
         });
-
-        Object.entries(groups).forEach(([date, notesInGroup]) => {
-            const groupEl = document.createElement('div');
-            groupEl.className = 'timeline-group';
-            const dateHeader = document.createElement('div');
-            dateHeader.className = 'timeline-date-header';
-            dateHeader.innerHTML = `<div class="timeline-dot"></div><span class="timeline-date-title">${date}</span>`;
-            groupEl.appendChild(dateHeader);
-
-            notesInGroup.forEach(note => {
-                const card = document.createElement('div');
-                card.className = `note-card type-${note.type}`;
-                card.innerHTML = `
-                    <div class="card-header">
-                        <span class="card-badge badge-${note.type}">${note.type}</span>
-                        <div class="card-actions">
-                            <a href="${note.link}" target="_blank" class="card-action-btn">
-                                <svg class="btn-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-                                </svg>
-                                Docs
-                            </a>
-                            <button class="card-action-btn tweet-btn" data-id="${note.id}">
-                                <svg class="btn-icon-sm" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                                </svg>
-                                Tweet
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card-content">${note.html}</div>
-                `;
-                card.querySelector('.tweet-btn').addEventListener('click', () => openTweetModal(note));
-                groupEl.appendChild(card);
-            });
-            elements.notesTimeline.appendChild(groupEl);
-        });
+        
+        const csvContent = csvRows.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        const dateString = new Date().toISOString().split('T')[0];
+        link.setAttribute('href', url);
+        link.setAttribute('download', `bigquery_release_notes_${dateString}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showToast(`Successfully exported ${filtered.length} notes to CSV!`, 'success');
     }
 
-    // Refresh buttons
+    // Refresh and Export buttons
     elements.refreshBtn.addEventListener('click', () => fetchNotes(true));
     elements.retryBtn.addEventListener('click', () => fetchNotes(true));
+    elements.exportCsvBtn.addEventListener('click', exportCurrentNotesToCSV);
 
     // ==========================================================================
     // TWEET MODAL & CHARACTER COUNTING
