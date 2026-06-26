@@ -1,6 +1,7 @@
 import logging
 import hashlib
 import time
+import re
 import requests
 import feedparser
 from bs4 import BeautifulSoup
@@ -72,16 +73,35 @@ def clean_and_parse_html(html_content):
                             tag['rel'] = 'noopener noreferrer'
                             
                     item_html_parts.append(str(sibling))
-                    item_text_parts.append(sibling.get_text().strip())
+                    
+                    # Formatted text processing based on block tag type
+                    if sibling.name in ['ul', 'ol']:
+                        list_items = []
+                        for li in sibling.find_all('li'):
+                            li_text = re.sub(r'\s+', ' ', li.get_text()).strip()
+                            if li_text:
+                                list_items.append(f"* {li_text}")
+                        item_text_parts.append("\n".join(list_items))
+                    elif sibling.name in ['pre', 'code']:
+                        # Preserve formatting in preformatted blocks
+                        item_text_parts.append(sibling.get_text())
+                    else:
+                        # Collapse internal consecutive whitespaces within regular paragraphs
+                        p_text = re.sub(r'\s+', ' ', sibling.get_text()).strip()
+                        if p_text:
+                            item_text_parts.append(p_text)
                 elif isinstance(sibling, str) and sibling.strip():
                     # Handle raw text nodes directly under h3
-                    item_html_parts.append(sibling.strip())
-                    item_text_parts.append(sibling.strip())
+                    text_node = re.sub(r'\s+', ' ', sibling).strip()
+                    if text_node:
+                        item_html_parts.append(text_node)
+                        item_text_parts.append(text_node)
                 
                 sibling = sibling.next_sibling
             
             item_html = "".join(item_html_parts).strip()
-            item_text = " ".join(item_text_parts).strip()
+            # Join separate blocks with double newline to preserve paragraph separation
+            item_text = "\n\n".join([part for part in item_text_parts if part]).strip()
             
             # Only add if we actually extracted content
             if item_html or item_text:
