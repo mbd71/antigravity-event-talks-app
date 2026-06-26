@@ -8,6 +8,7 @@
     --bg-main: #0B0E16;
     --bg-card: #141A29;
     --bg-card-hover: #1B2338;
+    --bg-header: rgba(11, 14, 22, 0.6);
     
     --border-color: #202A3E;
     --border-color-hover: #2E3C56;
@@ -68,6 +69,58 @@
     --shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.35);
     --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Light Mode Variables Overrides */
+html[data-theme="light"] {
+    --bg-app: #F8FAFC;
+    --bg-sidebar: #FFFFFF;
+    --bg-main: #F1F5F9;
+    --bg-card: #FFFFFF;
+    --bg-card-hover: #F8FAFC;
+    --bg-header: rgba(255, 255, 255, 0.6);
+    
+    --border-color: #E2E8F0;
+    --border-color-hover: #CBD5E1;
+    
+    --text-primary: #0F172A;
+    --text-secondary: #475569;
+    --text-muted: #94A3B8;
+    
+    --google-blue: #1A73E8;
+    --google-blue-hover: #1557B0;
+    --google-blue-glow: rgba(26, 115, 232, 0.12);
+
+    /* Modify glows/backgrounds for light mode cards */
+    --type-feature-bg: rgba(16, 185, 129, 0.12);
+    --type-feature-glow: rgba(16, 185, 129, 0.08);
+    
+    --type-change-bg: rgba(6, 182, 212, 0.12);
+    --type-change-glow: rgba(6, 182, 212, 0.08);
+    
+    --type-announcement-bg: rgba(236, 72, 153, 0.12);
+    --type-announcement-glow: rgba(236, 72, 153, 0.08);
+    
+    --type-fix-bg: rgba(139, 92, 246, 0.12);
+    --type-fix-glow: rgba(139, 92, 246, 0.08);
+    
+    --type-deprecation-bg: rgba(245, 158, 11, 0.12);
+    --type-deprecation-glow: rgba(245, 158, 11, 0.08);
+    
+    --type-general-bg: rgba(148, 163, 184, 0.15);
+    --type-general-glow: rgba(148, 163, 184, 0.08);
+    
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+}
+
+/* Smooth global transitions for theme changes */
+*, *::before, *::after {
+    transition: background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+                border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+                color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ==========================================================================
@@ -406,7 +459,7 @@ h1, h2, h3, h4, h5, h6 {
    HEADER CONTROLS
    ========================================================================== */
 .content-header {
-    background-color: rgba(11, 14, 22, 0.6);
+    background-color: var(--bg-header);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border-color);
@@ -416,6 +469,41 @@ h1, h2, h3, h4, h5, h6 {
     gap: 20px;
     z-index: 5;
     flex-shrink: 0;
+}
+
+.header-top-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+}
+
+.theme-toggle-btn {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    width: 48px;
+    height: 48px;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all var(--transition-fast);
+    box-shadow: var(--shadow-sm);
+}
+
+.theme-toggle-btn:hover {
+    border-color: var(--border-color-hover);
+    background-color: var(--bg-card-hover);
+    color: var(--google-blue);
+    transform: scale(1.02);
+}
+
+.theme-toggle-btn svg {
+    width: 20px;
+    height: 20px;
 }
 
 /* Search Box */

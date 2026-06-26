@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Controls & Search
         refreshBtn: document.getElementById('refresh-btn'),
         exportCsvBtn: document.getElementById('export-csv-btn'),
+        themeToggleBtn: document.getElementById('theme-toggle-btn'),
         retryBtn: document.getElementById('retry-btn'),
         searchInput: document.getElementById('search-input'),
         clearSearchBtn: document.getElementById('clear-search-btn'),
@@ -640,6 +641,41 @@ document.addEventListener('DOMContentLoaded', () => {
             window.getSelection().removeAllRanges();
         }
     });
+
+    // ==========================================================================
+    // THEME TOGGLE (DARK / LIGHT MODE)
+    // ==========================================================================
+    const moonIcon = elements.themeToggleBtn.querySelector('.icon-moon');
+    const sunIcon = elements.themeToggleBtn.querySelector('.icon-sun');
+
+    function applyTheme(theme) {
+        if (theme === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+            moonIcon.style.display = 'none';
+            sunIcon.style.display = 'block';
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+            moonIcon.style.display = 'block';
+            sunIcon.style.display = 'none';
+        }
+        localStorage.setItem('theme', theme);
+    }
+
+    elements.themeToggleBtn.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        applyTheme(newTheme);
+        showToast(`Theme changed to ${newTheme} mode!`, 'success');
+    });
+
+    // Check storage or system preference
+    const savedTheme = localStorage.getItem('theme');
+    const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    if (savedTheme === 'light' || (!savedTheme && prefersLight)) {
+        applyTheme('light');
+    } else {
+        applyTheme('dark');
+    }
 
     // Set initial Highlight in stats panel
     document.querySelector('.stat-card[data-stat="all"]').classList.add('active');
