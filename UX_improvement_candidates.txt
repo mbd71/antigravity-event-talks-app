@@ -1,0 +1,37 @@
+==========================================================================
+BigQuery Release Pulse - UX Assessment & Improvement Candidates
+==========================================================================
+
+STRENGTHS:
+- Minimal Cognitive Load: The timeline layout is clean and intuitive.
+- Immediate Action Feedback: Non-intrusive toast notifications confirm background events.
+- Frictionless Sharing: Pre-composed post editor with character limits and progress rings.
+- Interactive Text Selection: Floating tooltip enables easy sharing of specific blocks.
+
+--------------------------------------------------------------------------
+UX IMPROVEMENT CANDIDATES:
+--------------------------------------------------------------------------
+
+1. Search Match Highlighting (Ease of Use)
+   - Concept: Highlight matching query strings (e.g. "ODBC") in card text.
+   - UX Value: Shows exactly why a card matched the search string instantly.
+
+2. Keyboard Shortcuts (Accessibility & Speed)
+   - Concept: Bind key inputs like "/" to search, "Escape" to close/clear, and "C" to copy.
+   - UX Value: Speeds up workflows for developers and power users.
+
+3. Skeleton Loading State (Perceived Performance)
+   - Concept: Render empty block cards during initial fetch instead of a basic spinner.
+   - UX Value: Improves user expectation of the layout and cuts perceived wait time.
+
+4. Sorting & Date Filters (Data Exploration)
+   - Concept: Add oldest-to-newest sorting and quick filters (7 days, 30 days, custom).
+   - UX Value: Enables easy tracking of historical updates or custom ranges.
+
+5. Offline Persistence / Local Cache (Reliability)
+   - Concept: Cache the JSON output array in client-side localStorage.
+   - UX Value: Keeps the dashboard accessible offline or when the server is unreachable.
+
+6. Star/Unread Markers (Content Management)
+   - Concept: Allow bookmarking critical updates and flag new entries since last visit.
+   - UX Value: Helps users identify what updates they have already reviewed.
